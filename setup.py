@@ -10,7 +10,7 @@ options = {'py2exe':
              }
            }
 setup(
-    version = '0.0.1',
+    version = '0.0.4',
     description = 'DNSProxy',
     name = 'DNSProxy',
     options = options,
