@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 from socket import *
+import sys, os
 
 class DNSProxy:
     def __init__(self, dnsserver):
@@ -21,7 +22,7 @@ class DNSProxy:
             return 1
         # "delicious food" for GFW:
         while 1:
-            sock.settimeout(0.1)
+            sock.settimeout(0.5)
             try:
                 rspdata = sock.recv(65535)
             except timeout:
@@ -53,7 +54,12 @@ class DNSProxy:
 
 if __name__ == '__main__':
     try:
-        f = open('dnsserver.conf', 'r')
+        if hasattr(sys, "frozen"):
+            dir = os.path.dirname(sys.executable)
+        else:
+            dir = os.path.dirname(__file__)
+        confFile = os.path.join(dir, 'dnsserver.conf')
+        f = open(confFile, 'r')
         dns = f.read().split('=')
         f.close()
         if len(dns) == 2:
