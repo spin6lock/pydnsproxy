@@ -24,7 +24,7 @@ class LocalDNSHandler(BaseRequestHandler):
                 resp = self._getResponse(data)
                 cache[data] = resp
         try:
-          client_socket.sendto(resp, self.client_address)
+          client_socket.sendto(resp, 0, self.client_address)
         except StandardError as err:
           print err
 
@@ -38,7 +38,7 @@ class LocalDNSHandler(BaseRequestHandler):
             rspdata = sock.recv(65535)
         except Exception, e:
             print e, 'ignored.'
-            return 1
+            return ''
         # "delicious food" for GFW:
         while 1:
             sock.settimeout(DEF_TIMEOUT)
