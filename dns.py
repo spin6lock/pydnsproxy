@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-from SocketServer import *
-from socket import *
+from SocketServer import ThreadingUDPServer, BaseRequestHandler, UDPServer
+from socket import socket, AF_INET, SOCK_DGRAM, SOCK_STREAM, timeout
 import sys, os
 from common import *
 
@@ -14,11 +14,19 @@ class LocalDNSHandler(BaseRequestHandler):
         else:
             remote_server = gl_remote_server
         self.dnsserver = (remote_server, DEF_PORT)
+        self.tcp_socket = None 
 
     def handle(self):
-        data, socket = self.request
-        rspdata = self._getResponse(data)
-        socket.sendto(rspdata, self.client_address)
+        data, client_socket = self.request
+        cache = self.server.cache
+            resp = cache.get(data)
+            if not resp:
+                resp = self._getResponse(data)
+                cache[data] = resp
+        try:
+          client_socket.sendto(resp, self.client_address)
+        except StandardError as err:
+          print err
 
     def _getResponse(self, data):
         "Send client's DNS request (data) to remote DNS server, and return its response."
@@ -42,7 +50,7 @@ class LocalDNSHandler(BaseRequestHandler):
         return rspdata
 
 class LocalDNSServer(ThreadingUDPServer):
-    pass
+    cache = {}
 
 def main():
     global gl_remote_server
