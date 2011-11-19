@@ -1,10 +1,30 @@
 # -*- encoding: utf-8 -*-
+import logging
+import struct
 from SocketServer import ThreadingUDPServer, BaseRequestHandler, UDPServer
 from socket import socket, AF_INET, SOCK_DGRAM, SOCK_STREAM, timeout
 import sys, os
 from common import *
 
 gl_remote_server = None
+
+if DEBUG:
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig()
+logger = logging.getLogger("dns")
+    
+def cache_wrapper(func, cache={}):
+    def cache_func(self, data):
+        resp = cache.get(data)
+        if not resp:
+            resp = func(self, data)
+            cache[data] = resp
+        return resp
+    if DEF_CACHE:
+        return cache_func      
+    else:
+        return func
 
 class LocalDNSHandler(BaseRequestHandler):
     def setup(self):
@@ -18,16 +38,16 @@ class LocalDNSHandler(BaseRequestHandler):
 
     def handle(self):
         data, client_socket = self.request
-        cache = self.server.cache
-            resp = cache.get(data)
-            if not resp:
-                resp = self._getResponse(data)
-                cache[data] = resp
+        if DEF_CONNECTION == 'tcp':
+            resp = self.tcp_response(data)
+        else:
+            resp = self._getResponse(data)
         try:
           client_socket.sendto(resp, 0, self.client_address)
         except StandardError as err:
-          print err
+          logger.debug(err)
 
+    @cache_wrapper
     def _getResponse(self, data):
         "Send client's DNS request (data) to remote DNS server, and return its response."
         sock = socket(AF_INET, SOCK_DGRAM) # socket for the remote DNS server
@@ -37,7 +57,7 @@ class LocalDNSHandler(BaseRequestHandler):
         try:
             rspdata = sock.recv(65535)
         except Exception, e:
-            print e, 'ignored.'
+            logger.debug('%s ignored.', e)
             return ''
         # "delicious food" for GFW:
         while 1:
@@ -49,10 +69,36 @@ class LocalDNSHandler(BaseRequestHandler):
         sock.close()
         return rspdata
 
+    @cache_wrapper
+    def tcp_response(self, data):
+        """ tcp request dns data """        
+        global tcp_sock    
+        sock = tcp_sock
+        size_data = self.tcp_packet_head(data)
+        sock.send(size_data + data)
+        resp = sock.recv(1024)
+        return self.packet_body(resp)
+
+    def tcp_packet_head(self, data):
+        size = len(data)
+        size_data = struct.pack('!H', size)
+        logger.debug("head data len: %d", size)
+        logger.debug("head data: %s", repr(size_data))
+        return size_data
+
+    def packet_body(self, data):
+        size = struct.unpack('!H', data[0:2])[0]
+        logger.debug("response package size: %d", size)
+        return data[2:size]
+
 class LocalDNSServer(ThreadingUDPServer):
-    cache = {}
+    pass
 
 def main():
+    global tcp_sock
+    tcp_sock = socket(AF_INET, SOCK_STREAM)
+    tcp_sock.connect((DEF_REMOTE_SERVER, DEF_PORT))
+    tcp_sock.settimeout(5)
     global gl_remote_server
     try:
         if hasattr(sys, 'frozen'):
@@ -72,6 +118,7 @@ def main():
         pass
     dnsserver = LocalDNSServer((DEF_LOCAL_HOST, DEF_PORT), LocalDNSHandler)
     dnsserver.serve_forever()
+    tcp_sock.close()
 
 if __name__ == '__main__':
     main()
