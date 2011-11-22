@@ -72,33 +72,37 @@ class LocalDNSHandler(BaseRequestHandler):
     @cache_wrapper
     def tcp_response(self, data):
         """ tcp request dns data """        
-        global tcp_sock    
-        sock = tcp_sock
+        sock = self.get_tcp_sock()
         size_data = self.tcp_packet_head(data)
         sock.send(size_data + data)
         resp = sock.recv(1024)
+        logger.debug("receive data:%s", resp.encode('hex'))
+        sock.close()
         return self.packet_body(resp)
 
     def tcp_packet_head(self, data):
         size = len(data)
         size_data = struct.pack('!H', size)
         logger.debug("head data len: %d", size)
-        logger.debug("head data: %s", repr(size_data))
+        logger.debug("head data: %s", size_data.encode('hex'))
         return size_data
 
     def packet_body(self, data):
         size = struct.unpack('!H', data[0:2])[0]
         logger.debug("response package size: %d", size)
-        return data[2:size]
+        logger.debug("len of response: %d", len(data))
+        return data[2:2 + size]
+
+    def get_tcp_sock(self):
+        tcp_sock = socket(AF_INET, SOCK_STREAM)
+        tcp_sock.connect((DEF_REMOTE_SERVER, DEF_PORT))
+        tcp_sock.settimeout(5)
+        return tcp_sock
 
 class LocalDNSServer(ThreadingUDPServer):
     pass
 
 def main():
-    global tcp_sock
-    tcp_sock = socket(AF_INET, SOCK_STREAM)
-    tcp_sock.connect((DEF_REMOTE_SERVER, DEF_PORT))
-    tcp_sock.settimeout(5)
     global gl_remote_server
     try:
         if hasattr(sys, 'frozen'):
