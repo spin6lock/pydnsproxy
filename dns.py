@@ -1,10 +1,16 @@
 # -*- encoding: utf-8 -*-
+import gevent.monkey
+gevent.monkey.patch_all()
 import logging
+import Queue
 import struct
 from SocketServer import ThreadingUDPServer, BaseRequestHandler, UDPServer
 from socket import socket, AF_INET, SOCK_DGRAM, SOCK_STREAM, timeout
 import sys, os
+
 from common import *
+
+import domainpattern
 
 gl_remote_server = None
 
@@ -36,16 +42,24 @@ class LocalDNSHandler(BaseRequestHandler):
         self.dnsserver = (remote_server, DEF_PORT)
         self.tcp_socket = None 
 
+    def extract_url(self, data):
+        pass
+
     def handle(self):
         data, client_socket = self.request
-        if DEF_CONNECTION == 'tcp':
-            resp = self.tcp_response(data)
+        #pattern match
+        url = self.extract_url(data)
+        if domainpattern.is_match(url):
+            if DEF_CONNECTION == 'tcp':
+                resp = self.tcp_response(data)
+            else:
+                resp = self._getResponse(data)
         else:
-            resp = self._getResponse(data)
+            resp = self.get_response_normal(data)
         try:
-          client_socket.sendto(resp, 0, self.client_address)
+            client_socket.sendto(resp, 0, self.client_address)
         except StandardError as err:
-          logger.debug(err)
+            logger.debug(err)
 
     @cache_wrapper
     def _getResponse(self, data):
@@ -70,14 +84,29 @@ class LocalDNSHandler(BaseRequestHandler):
         return rspdata
 
     @cache_wrapper
+    def get_response_normal(self, data):
+        """ get the DNS result from local DNS server """
+        sock = socket(AF_INET, SOCK_DGRAM)
+        sock.connect(self.domestic_dnsserver)
+        sock.sendall(data)
+        resp = sock.recv(65535)
+        return resp
+
+    @cache_wrapper
     def tcp_response(self, data):
         """ tcp request dns data """        
-        sock = self.get_tcp_sock()
-        size_data = self.tcp_packet_head(data)
-        sock.send(size_data + data)
-        resp = sock.recv(1024)
-        logger.debug("receive data:%s", resp.encode('hex'))
-        sock.close()
+        resp = None
+        while not resp:
+          sock = self.get_tcp_sock()
+          size_data = self.tcp_packet_head(data)
+          sock.send(size_data + data)
+          try:
+            resp = sock.recv(1024)
+            logger.debug("receive data:%s", resp.encode('hex'))
+          except timeout:
+            logger.debug("tcp socket timeout, throw away")
+            sock = self.create_tcp_sock()
+        self.release_tcp_sock(sock)
         return self.packet_body(resp)
 
     def tcp_packet_head(self, data):
@@ -94,16 +123,41 @@ class LocalDNSHandler(BaseRequestHandler):
         return data[2:2 + size]
 
     def get_tcp_sock(self):
+        global tcp_pool
+        try:
+          sock = tcp_pool.get(block=True, timeout=DEF_TIMEOUT)
+        except Queue.Empty:
+          logger.debug("tcp pool is empty, now create a new socket")
+          sock = self.create_tcp_sock()
+        return sock
+    
+    def release_tcp_sock(self, sock):
+        global tcp_pool
+        try:
+          tcp_pool.put(sock, block=False)
+        except Queue.Full:
+          logger.debug("tcp pool is full, now throw away the oldest socket")
+          old_sock = tcp_pool.get(block=False)
+          old_sock.close()
+          tcp_pool.put(sock, block=False)
+
+    def create_tcp_sock(self):
         tcp_sock = socket(AF_INET, SOCK_STREAM)
         tcp_sock.connect((DEF_REMOTE_SERVER, DEF_PORT))
         tcp_sock.settimeout(5)
         return tcp_sock
 
-class LocalDNSServer(ThreadingUDPServer):
-    pass
+if DEF_MULTITHREAD:
+    class LocalDNSServer(ThreadingUDPServer):
+        pass
+else:
+    class LocalDNSServer(UDPServer):
+        pass
 
 def main():
     global gl_remote_server
+    global tcp_pool 
+    tcp_pool = Queue.Queue()
     try:
         if hasattr(sys, 'frozen'):
             dir = os.path.dirname(sys.executable)
@@ -122,7 +176,6 @@ def main():
         pass
     dnsserver = LocalDNSServer((DEF_LOCAL_HOST, DEF_PORT), LocalDNSHandler)
     dnsserver.serve_forever()
-    tcp_sock.close()
 
 if __name__ == '__main__':
     main()
