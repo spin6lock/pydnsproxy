@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
-import gevent.monkey
-gevent.monkey.patch_all()
+#import gevent.monkey
+#gevent.monkey.patch_all()
+import struct
 import logging
 import Queue
 import struct
@@ -40,21 +41,39 @@ class LocalDNSHandler(BaseRequestHandler):
         else:
             remote_server = gl_remote_server
         self.dnsserver = (remote_server, DEF_PORT)
+        self.domestic_dnsserver = (DEF_DOMESTIC_DNS, DEF_PORT)
         self.tcp_socket = None 
 
     def extract_url(self, data):
-        pass
+        logger.debug("raw dns request:%s", data.encode('hex'))
+        #pass 12 bytes
+        data = data[12:]
+        #extract the url
+        url = []
+        start = 0
+        len = ord(data[start])
+        print "len:", len
+        while len != 0:
+            part = str(data[start + 1:start + 1 + len])
+            print part
+            url.append(part)
+            start = start + len + 1
+            len = ord(data[start])
+        url = '.'.join(url)
+        logger.debug("requesting url:%s", url)
+        return url
 
     def handle(self):
         data, client_socket = self.request
-        #pattern match
         url = self.extract_url(data)
         if domainpattern.is_match(url):
+            logger.debug("match pattern, use remote dns")
             if DEF_CONNECTION == 'tcp':
                 resp = self.tcp_response(data)
             else:
                 resp = self._getResponse(data)
         else:
+            logger.debug("doesn't match pattern, use local dns")
             resp = self.get_response_normal(data)
         try:
             client_socket.sendto(resp, 0, self.client_address)
@@ -90,6 +109,7 @@ class LocalDNSHandler(BaseRequestHandler):
         sock.connect(self.domestic_dnsserver)
         sock.sendall(data)
         resp = sock.recv(65535)
+        sock.close()
         return resp
 
     @cache_wrapper
