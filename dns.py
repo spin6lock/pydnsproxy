@@ -6,7 +6,7 @@ from SocketServer import ThreadingUDPServer, BaseRequestHandler, UDPServer
 from socket import socket, AF_INET, SOCK_DGRAM, timeout
 
 from common import DEF_MULTITHREAD, DEBUG, DEF_DNS_IF_MATCH_PATTERN, DEF_PORT, \
-    DEF_DOMESTIC_DNS, DEF_CONNECTION, DEF_TIMEOUT, DEF_LOCAL_HOST
+    DEF_CONNECTION, DEF_TIMEOUT, DEF_LOCAL_HOST, DEF_DNS_IF_DOESNT_MATCH
 
 import domainpattern
 import cache
@@ -26,17 +26,17 @@ class LocalDNSHandler(BaseRequestHandler, TCP_Handle):
           self.match_query = self._getResponse
         self.query_with_no_match = self.get_response_normal
         self.tcp_dns_server = DEF_DNS_IF_MATCH_PATTERN
-        self.normal_dns_server = (DEF_DOMESTIC_DNS, DEF_PORT)
+        self.normal_dns_server = (DEF_DNS_IF_DOESNT_MATCH, DEF_PORT)
         self.dnsserver = (DEF_DNS_IF_MATCH_PATTERN, DEF_PORT)
 
     def handle(self):
         data, client_socket = self.request
         url = self.extract_url(data)
         if domainpattern.is_match(url):
-            logger.debug("match pattern, use remote dns")
+            logger.debug("match pattern, use dns:%s", DEF_DNS_IF_MATCH_PATTERN)
             self.match_query(data, url)
         else:
-            logger.debug("doesn't match pattern, use local dns")
+            logger.debug("doesn't match pattern, use dns:%s", DEF_DNS_IF_DOESNT_MATCH)
             resp = self.query_with_no_match(data, url)
         try:
             client_socket.sendto(resp, 0, self.client_address)
