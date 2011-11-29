@@ -1,6 +1,4 @@
 # -*- encoding: utf-8 -*-
-#import gevent.monkey
-#gevent.monkey.patch_all()
 import logging
 from SocketServer import ThreadingUDPServer, BaseRequestHandler, UDPServer
 from socket import socket, AF_INET, SOCK_DGRAM, timeout
