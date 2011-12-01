@@ -32,17 +32,17 @@ class LocalDNSHandler(BaseRequestHandler, TCP_Handle):
         url = self.extract_url(data)
         if domainpattern.is_match(url):
             logger.debug("match pattern, use dns:%s", DEF_DNS_IF_MATCH_PATTERN)
-            self.match_query(data, url)
+            resp = self.match_query(data)
         else:
             logger.debug("doesn't match pattern, use dns:%s", DEF_DNS_IF_DOESNT_MATCH)
-            resp = self.query_with_no_match(data, url)
+            resp = self.query_with_no_match(data)
         try:
             client_socket.sendto(resp, 0, self.client_address)
         except StandardError as err:
             logger.debug(err)
 
     @cache.memorized_domain
-    def _getResponse(self, data, url):
+    def _getResponse(self, data):
         "Send client's DNS request (data) to remote DNS server, and return its response."
         sock = socket(AF_INET, SOCK_DGRAM) # socket for the remote DNS server
         sock.connect(self.dnsserver)
@@ -63,14 +63,18 @@ class LocalDNSHandler(BaseRequestHandler, TCP_Handle):
         sock.close()
         return rspdata
 
-    #@cache.memorized_domain
-    def get_response_normal(self, data, url):
+    @cache.memorized_domain
+    def get_response_normal(self, data):
         """ get the DNS result from local DNS server """
-        logger.debug("normal dns req:%s", url)
+        logger.debug("normal dns req")
         sock = socket(AF_INET, SOCK_DGRAM)
         sock.connect(self.normal_dns_server)
         sock.sendall(data)
-        resp = sock.recv(65535)
+        sock.settimeout(5)
+        try:
+          resp = sock.recv(65535)
+        except Exception as err:
+          logger.debug('%s ignored', err.message)
         logger.debug("normal dns reply:%s", resp.encode("hex"))
         sock.close()
         return resp

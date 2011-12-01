@@ -8,13 +8,13 @@ DEF_MULTITHREAD = True
 
 
 #缓存相关
-DEF_CACHE = True
+DEF_CACHE = False
 DEF_CACHE_TTL = 300 #单位为秒
 
 #DNS服务器地址设置
 DEF_LOCAL_HOST = '127.0.0.1'
 DEF_REMOTE_SERVER = '8.8.4.4'		#受信服务器
-DEF_DOMESTIC_DNS = '192.168.0.1'#国内非受信服务器
+DEF_DOMESTIC_DNS = '202.96.128.143'#国内非受信服务器
 
 #DNS解释策略配置
 DEF_DNS = DEF_REMOTE_SERVER #默认代理

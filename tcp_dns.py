@@ -18,14 +18,14 @@ class TCP_Handle(object):
         #extract the url
         url = []
         start = 0
-        len = ord(data[start])
-        print "len:", len
-        while len != 0:
-            part = str(data[start + 1:start + 1 + len])
-            print part
+        len_of_data = ord(data[start])
+        logger.debug("len_of_data:%s", len_of_data)
+        while len_of_data != 0:
+            part = str(data[start + 1:start + 1 + len_of_data])
+            logger.debug("part:%s", part)
             url.append(part)
-            start = start + len + 1
-            len = ord(data[start])
+            start = start + len_of_data + 1
+            len_of_data = ord(data[start])
         url = '.'.join(url)
         logger.debug("requesting url:%s", url)
         return url
