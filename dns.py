@@ -73,9 +73,9 @@ class LocalDNSHandler(BaseRequestHandler, TCP_Handle):
         sock.settimeout(5)
         try:
           resp = sock.recv(65535)
+          logger.debug("normal dns reply:%s", resp.encode("hex"))
         except Exception as err:
           logger.debug('%s ignored', err.message)
-        logger.debug("normal dns reply:%s", resp.encode("hex"))
         sock.close()
         return resp
 
