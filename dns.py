@@ -14,6 +14,8 @@ if DEBUG:
     logging.basicConfig(level=logging.DEBUG)
 else:
     logging.basicConfig()
+    file_handler = logging.FileHandler('pydnsproxy.log', 'a')
+    logging.root.addHandler(file_handler)
 logger = logging.getLogger("dns")
 
 class LocalDNSHandler(BaseRequestHandler, TCP_Handle):

@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-DEBUG = True
+DEBUG = False
 DEF_PORT = 53
 DEF_CONF_FILE = 'dnsserver.conf'
 DEF_TIMEOUT = 0.4
