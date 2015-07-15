@@ -16,10 +16,10 @@ Windows
 3. exe只是简单的7zip打包，如杀毒软件报告病毒应属误报。提供两个在线扫描结果：VirusTotal、VirScan。
 
 Linux、Mac
-目前没有针对Linux和Mac的包，但可以把py的源码checkout下来，除需要手动设置外，使用方法类似于Windows。
+目前没有针对Linux和Mac的包，但可以把python的源码checkout下来，除需要手动设置外，使用方法类似于Windows。
 
 说明
-什么是DNS缓存污染？参见维基百科的这篇条目https://zh.wikipedia.org/wiki/%E5%9F%9F%E5%90%8D%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%BC%93%E5%AD%98%E6%B1%A1%E6%9F%93。
+什么是DNS缓存污染？参见维基百科的这篇条目https://zh.wikipedia.org/wiki/%E5%9F%9F%E5%90%8D%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%BC%93%E5%AD%98%E6%B1%A1%E6%9F%93
 
 DNSProxy只提供绕过DNS缓存污染的功能，而不能为你解决连接被重置的问题，更不能为你提供代理服务器翻墙。其他业务，请查询goagent。
 

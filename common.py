@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
-DEBUG = True
-LISTEN_PORT = 5300
+DEBUG = False
+LISTEN_PORT = 53
 REMOTE_TCP_DNS_PORT = 53
 REMOTE_UDP_DNS_PORT = 53
 DEF_CONF_FILE = 'dnsserver.conf'

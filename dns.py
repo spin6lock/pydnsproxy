@@ -19,9 +19,7 @@ class LocalDNSHandler(BaseRequestHandler, TCP_Handle):
     def setup(self):
         if DEF_CONNECTION == 'tcp':
           self.match_query = self.tcp_response
-          print "use tcp"
         else:
-          print "use udp"
           self.match_query = self._getResponse
         self.query_with_no_match = self.get_response_normal
         self.tcp_dns_server = DEF_DNS_IF_MATCH_PATTERN
