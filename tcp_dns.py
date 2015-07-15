@@ -5,7 +5,7 @@ import logging
 import Queue
 
 import cache
-from common import DEF_REMOTE_SERVER, DEF_PORT, DEF_TIMEOUT
+from common import DEF_REMOTE_SERVER, DEF_TIMEOUT, REMOTE_TCP_DNS_PORT
 
 logger = logging.getLogger('tcp_dns')
 
@@ -79,7 +79,7 @@ class TCP_Handle(object):
 
     def create_tcp_sock(self):
         tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        tcp_sock.connect((self.tcp_dns_server, DEF_PORT))
+        tcp_sock.connect((self.tcp_dns_server, REMOTE_TCP_DNS_PORT))
         tcp_sock.settimeout(5)
         return tcp_sock
 
