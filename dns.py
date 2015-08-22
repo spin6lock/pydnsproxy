@@ -1,61 +1,49 @@
 # -*- encoding: utf-8 -*-
+from gevent import monkey
+monkey.patch_all()
 import logging
-from SocketServer import ThreadingUDPServer, BaseRequestHandler, UDPServer
 from socket import socket, AF_INET, SOCK_DGRAM, timeout
 
-from common import DEF_MULTITHREAD, DEBUG, DEF_DNS_IF_MATCH_PATTERN, LISTEN_PORT, \
-    DEF_CONNECTION, DEF_TIMEOUT, DEF_LOCAL_HOST, DEF_DNS_IF_DOESNT_MATCH, REMOTE_UDP_DNS_PORT
+from common import DEBUG,LISTEN_PORT,AUTHORIZED_DNS_SERVER,\
+    DEF_CONNECTION, DEF_TIMEOUT, DEF_LOCAL_HOST, \
+    REMOTE_UDP_DNS_PORT, DEF_DOMESTIC_DNS  
 
 import domainpattern
 import cache
 from tcp_dns import TCP_Handle
+from gevent.server import DatagramServer
 
 if DEBUG:
     logging.basicConfig(level=logging.DEBUG)
 else:
     logging.basicConfig(filename="pydnsproxy.log")
 
-class LocalDNSHandler(BaseRequestHandler, TCP_Handle):
-    def setup(self):
+logger = logging.getLogger('dns')
+class LocalDNSServer(DatagramServer, TCP_Handle):
+    def handle(self, data, addr):
         if DEF_CONNECTION == 'tcp':
           self.match_query = self.tcp_response
         else:
-          self.match_query = self._getResponse
-        self.query_with_no_match = self.get_response_normal
-        self.tcp_dns_server = DEF_DNS_IF_MATCH_PATTERN
-        self.normal_dns_server = (DEF_DNS_IF_DOESNT_MATCH, REMOTE_UDP_DNS_PORT)
-        self.dnsserver = (DEF_DNS_IF_MATCH_PATTERN, REMOTE_UDP_DNS_PORT)
-
-    def handle(self):
-        data, client_socket = self.request
+          self.match_query = self.normal_response
         url = self.extract_url(data)
         resp = self.match_query(data)
         try:
-            client_socket.sendto(resp, 0, self.client_address)
+            self.socket.sendto(resp, 0, addr)
         except StandardError as err:
             logging.debug(err)
 
-    @cache.memorized_domain
-    def _getResponse(self, data):
-        "Send client's DNS request (data) to remote DNS server, and return its response."
+    #@cache.memorized_domain
+    def normal_response(self, data):
         sock = socket(AF_INET, SOCK_DGRAM) # socket for the remote DNS server
-        sock.connect(self.dnsserver)
+        sock.connect((DEF_DOMESTIC_DNS, REMOTE_UDP_DNS_PORT))
         sock.sendall(data)
-        sock.settimeout(5)
         try:
-            rspdata = sock.recv(65535)
+            resp = sock.recv(65535)
         except Exception, e:
             logging.debug('%s ignored.', e)
             return ''
-        # "delicious food" for GFW:
-        while 1:
-            sock.settimeout(DEF_TIMEOUT)
-            try:
-                rspdata = sock.recv(65535)
-            except timeout:
-                break
         sock.close()
-        return rspdata
+        return resp
 
     @cache.memorized_domain
     def get_response_normal(self, data):
@@ -74,15 +62,9 @@ class LocalDNSHandler(BaseRequestHandler, TCP_Handle):
         sock.close()
         return resp
 
-if DEF_MULTITHREAD:
-    class LocalDNSServer(ThreadingUDPServer):
-        pass
-else:
-    class LocalDNSServer(UDPServer):
-        pass
-
 def main():
-    dnsserver = LocalDNSServer((DEF_LOCAL_HOST, LISTEN_PORT), LocalDNSHandler)
+    listener = DEF_LOCAL_HOST +":"+ str(LISTEN_PORT)
+    dnsserver = LocalDNSServer(listener)
     dnsserver.serve_forever()
 
 if __name__ == '__main__':
