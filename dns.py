@@ -32,8 +32,8 @@ class LocalDNSServer(DatagramServer, TCP_Handle):
             logging.debug(err)
 
     def normal_response(self, data):
-	labels, _ = cache.unpack_name(data, 12)
-	logger.debug("udp resolv:%s", '.'.join(labels))
+        labels, _ = cache.unpack_name(data, 12)
+        logger.debug("udp resolv:%s", '.'.join(labels))
         sock = socket(AF_INET, SOCK_DGRAM) # socket for the remote DNS server
         sock.connect((DEF_DOMESTIC_DNS, REMOTE_UDP_DNS_PORT))
         sock.sendall(data)
