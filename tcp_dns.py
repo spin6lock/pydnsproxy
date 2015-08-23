@@ -11,25 +11,6 @@ logger = logging.getLogger('tcp_dns')
 
 tcp_pool = Queue.Queue()
 class TCP_Handle(object):
-    def extract_url(self, data):
-        logger.debug("raw dns request:%s", data.encode('hex'))
-        #pass 12 bytes
-        data = data[12:]
-        #extract the url
-        url = []
-        start = 0
-        len_of_data = ord(data[start])
-        logger.debug("len_of_data:%s", len_of_data)
-        while len_of_data != 0:
-            part = str(data[start + 1:start + 1 + len_of_data])
-            logger.debug("part:%s", part)
-            url.append(part)
-            start = start + len_of_data + 1
-            len_of_data = ord(data[start])
-        url = '.'.join(url)
-        logger.debug("requesting url:%s", url)
-        return url
-
     @cache.memorized_domain
     def tcp_response(self, data):
         """ tcp request dns data """        

@@ -25,40 +25,24 @@ class LocalDNSServer(DatagramServer, TCP_Handle):
           self.match_query = self.tcp_response
         else:
           self.match_query = self.normal_response
-        url = self.extract_url(data)
         resp = self.match_query(data)
         try:
             self.socket.sendto(resp, 0, addr)
         except StandardError as err:
             logging.debug(err)
 
-    #@cache.memorized_domain
     def normal_response(self, data):
+	labels, _ = cache.unpack_name(data, 12)
+	logger.debug("udp resolv:%s", '.'.join(labels))
         sock = socket(AF_INET, SOCK_DGRAM) # socket for the remote DNS server
         sock.connect((DEF_DOMESTIC_DNS, REMOTE_UDP_DNS_PORT))
         sock.sendall(data)
+        sock.settimeout(5)
         try:
             resp = sock.recv(65535)
         except Exception, e:
             logging.debug('%s ignored.', e)
             return ''
-        sock.close()
-        return resp
-
-    @cache.memorized_domain
-    def get_response_normal(self, data):
-        """ get the DNS result from local DNS server """
-        logging.debug("normal dns req")
-        sock = socket(AF_INET, SOCK_DGRAM)
-        sock.connect(self.normal_dns_server)
-        sock.sendall(data)
-        sock.settimeout(5)
-        resp = ""
-        try:
-          resp = sock.recv(65535)
-          logging.debug("normal dns reply:%s", resp.encode("hex"))
-        except Exception as err:
-          logging.debug('%s ignored', err.message)
         sock.close()
         return resp
 
