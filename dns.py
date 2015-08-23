@@ -11,6 +11,7 @@ from common import DEBUG,LISTEN_PORT,AUTHORIZED_DNS_SERVER,\
 import domainpattern
 import cache
 from tcp_dns import TCP_Handle
+from http_dns import HttpDnsHandle
 from gevent.server import DatagramServer
 
 if DEBUG:
@@ -21,10 +22,12 @@ else:
 logger = logging.getLogger('dns')
 
 
-class LocalDNSServer(DatagramServer, TCP_Handle):
+class LocalDNSServer(DatagramServer, TCP_Handle, HttpDnsHandle):
     def handle(self, data, addr):
         if CONNECTION == 'tcp':
             self.match_query = self.tcp_response
+        elif CONNECTION == "http":
+            self.match_query = self.http_response
         else:
             self.match_query = self.normal_response
         resp = self.match_query(data)
