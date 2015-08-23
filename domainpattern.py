@@ -11,6 +11,7 @@ for line in lines:
     line = line.strip()
     re_program.append(re.compile(line, re.I))
 
+
 def is_match(url):
     global re_program
     for program in re_program:
@@ -18,6 +19,7 @@ def is_match(url):
             logger.debug("match pattern:%s", program.pattern)
             return program.pattern
     return None
+
 
 def match_test():
     global re_program
@@ -33,6 +35,7 @@ def match_test():
             flag = True
         if not flag:
             print "doesn't match"
+
 
 if __name__ == '__main__':
     match_test()

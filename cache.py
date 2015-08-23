@@ -8,17 +8,19 @@ import struct
 
 logger = logging.getLogger("cache")
 
+
 class memorized(object):
-    """ 带超时控制的缓存类 """ 
+    """ 带超时控制的缓存类 """
+
     def __init__(self, func):
         self.func = func
         self.cache_name = "_cache_" + func.func_name
         self.cache = {}
         self.ttl = CACHE_TTL
         if CACHE:
-          self.__call__ = self.cache_call
+            self.__call__ = self.cache_call
         else:
-          self.__call__ = self.func
+            self.__call__ = self.func
 
     def __get__(self, obj, cls=None):
         return functools.partial(self.__call__, obj)
@@ -26,26 +28,29 @@ class memorized(object):
     def cache_call(self, *args):
         pass
 
+
 def unpack_name(rawstring, offset):
     labels = []
     i = offset
     while True:
         label_length = struct.unpack(">B", rawstring[i])[0]
-        if label_length >= 192: #this is pointer
-            label_length = struct.unpack(">H", rawstring[i:i+2])[0]
+        if label_length >= 192:  #this is pointer
+            label_length = struct.unpack(">H", rawstring[i:i + 2])[0]
             pointer_offset = label_length & 0x3fff
             logger.debug("pointer offset:%d", pointer_offset)
             labels, _ = unpack_name(rawstring, pointer_offset)
             return labels, i + 2
         else:
             i = i + 1
-        label = struct.unpack("%ds" %label_length, rawstring[i:i+label_length])[0]
+        label = struct.unpack("%ds" % label_length,
+                              rawstring[i:i + label_length])[0]
         labels.append(label)
         i = i + label_length
         if rawstring[i] == chr(0):
             break
     i += 1
     return labels, i
+
 
 class memorized_domain(memorized):
     def cache_call(self, obj, raw_data):
@@ -90,12 +95,11 @@ class memorized_domain(memorized):
         logger.debug("start:%d, %s", start, data[start:].encode("hex"))
         _, offset = unpack_name(data, start)
         logger.debug("offset:%d", offset)
-        logger.debug("type class ttl:%s", data[offset:offset+8].encode("hex"))
-        ret = struct.unpack("!HHI", data[offset:offset+8])
+        logger.debug("type class ttl:%s", data[offset:offset + 8].encode(
+            "hex"))
+        ret = struct.unpack("!HHI", data[offset:offset + 8])
         dns_type, dns_class, ttl = ret
         logger.debug("ttl:%s", ttl)
         if ttl == 0:
-            ttl = 60 #in secs
+            ttl = 60  #in secs
         return ttl
-
-
