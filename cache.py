@@ -2,8 +2,8 @@
 import time
 import logging
 import functools
-from common import DEF_CACHE
-from common import DEF_CACHE_TTL
+from common import CACHE
+from common import CACHE_TTL
 import struct
 
 logger = logging.getLogger("cache")
@@ -14,8 +14,8 @@ class memorized(object):
         self.func = func
         self.cache_name = "_cache_" + func.func_name
         self.cache = {}
-        self.ttl = DEF_CACHE_TTL
-        if DEF_CACHE:
+        self.ttl = CACHE_TTL
+        if CACHE:
           self.__call__ = self.cache_call
         else:
           self.__call__ = self.func

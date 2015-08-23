@@ -5,8 +5,8 @@ import logging
 from socket import socket, AF_INET, SOCK_DGRAM, timeout
 
 from common import DEBUG,LISTEN_PORT,AUTHORIZED_DNS_SERVER,\
-    DEF_CONNECTION, DEF_TIMEOUT, DEF_LOCAL_HOST, \
-    REMOTE_UDP_DNS_PORT, DEF_DOMESTIC_DNS  
+    CONNECTION, TIMEOUT, LOCAL_HOST, \
+    REMOTE_UDP_DNS_PORT, DOMESTIC_DNS  
 
 import domainpattern
 import cache
@@ -21,7 +21,7 @@ else:
 logger = logging.getLogger('dns')
 class LocalDNSServer(DatagramServer, TCP_Handle):
     def handle(self, data, addr):
-        if DEF_CONNECTION == 'tcp':
+        if CONNECTION == 'tcp':
           self.match_query = self.tcp_response
         else:
           self.match_query = self.normal_response
@@ -35,7 +35,7 @@ class LocalDNSServer(DatagramServer, TCP_Handle):
         labels, _ = cache.unpack_name(data, 12)
         logger.debug("udp resolv:%s", '.'.join(labels))
         sock = socket(AF_INET, SOCK_DGRAM) # socket for the remote DNS server
-        sock.connect((DEF_DOMESTIC_DNS, REMOTE_UDP_DNS_PORT))
+        sock.connect((DOMESTIC_DNS, REMOTE_UDP_DNS_PORT))
         sock.sendall(data)
         sock.settimeout(5)
         try:
@@ -47,7 +47,7 @@ class LocalDNSServer(DatagramServer, TCP_Handle):
         return resp
 
 def main():
-    listener = DEF_LOCAL_HOST +":"+ str(LISTEN_PORT)
+    listener = LOCAL_HOST +":"+ str(LISTEN_PORT)
     dnsserver = LocalDNSServer(listener)
     dnsserver.serve_forever()
 

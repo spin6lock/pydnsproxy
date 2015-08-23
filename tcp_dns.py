@@ -5,7 +5,7 @@ import logging
 import Queue
 
 import cache
-from common import AUTHORIZED_DNS_SERVER, DEF_TIMEOUT, REMOTE_TCP_DNS_PORT
+from common import AUTHORIZED_DNS_SERVER, TIMEOUT, REMOTE_TCP_DNS_PORT
 
 logger = logging.getLogger('tcp_dns')
 
@@ -43,7 +43,7 @@ class TCP_Handle(object):
 
     def get_tcp_sock(self):
         try:
-          sock = tcp_pool.get(block=True, timeout=DEF_TIMEOUT)
+          sock = tcp_pool.get(block=True, timeout=TIMEOUT)
         except Queue.Empty:
           logger.debug("tcp pool is empty, now create a new socket")
           sock = self.create_tcp_sock()
@@ -56,9 +56,11 @@ class TCP_Handle(object):
           logger.debug("tcp pool is full, now throw away the oldest socket")
           old_sock = tcp_pool.get(block=False)
           old_sock.close()
+          logger.debug("close sock")
           tcp_pool.put(sock, block=False)
 
     def create_tcp_sock(self):
+        logger.debug("create sock")
         tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         tcp_sock.connect((AUTHORIZED_DNS_SERVER, REMOTE_TCP_DNS_PORT))
         tcp_sock.settimeout(5)
