@@ -1,0 +1,23 @@
+# -*- encoding: utf-8 -*-
+
+DEBUG = True
+LISTEN_PORT = 53
+REMOTE_TCP_DNS_PORT = 53
+REMOTE_UDP_DNS_PORT = 53
+CONF_FILE = 'dnsserver.conf'
+TIMEOUT = 0.4
+TCP_QUEUE_SIZE = 10
+
+#缓存相关
+CACHE = True
+CACHE_TTL = 300  #单位为秒
+
+#DNS服务器地址设置
+LOCAL_HOST = '127.0.0.1'
+AUTHORIZED_DNS_SERVER = '8.8.4.4'  #受信服务器
+DOMESTIC_DNS = '223.5.5.5'  #国内非受信服务器
+
+#DNS解释策略配置
+#CONNECTION = 'tcp'  #若规则匹配，使用tcp进行查询
+#CONNECTION = 'udp' #若规则匹配，使用udp进行查询
+CONNECTION = 'http'  #若规则匹配，使用http进行查询
