@@ -97,6 +97,7 @@ def pack_a_record(name_offset, ip):
 
 
 class HttpDnsHandle(object):
+    @cache.memorized_domain
     def http_response(self, dns_req):
         logger.debug("req :%s", dns_req.encode("hex"))
         dns_header, dlen = unpack_dns_header(dns_req)
