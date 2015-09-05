@@ -55,7 +55,6 @@ def unpack_name(rawstring, offset):
 class memorized_domain(memorized):
     def cache_call(self, obj, raw_data):
         cache = self.cache.get(self.cache_name, {})
-        logger.debug(cache)
         now = time.time()
         url = self.extract_url(raw_data)
         try:

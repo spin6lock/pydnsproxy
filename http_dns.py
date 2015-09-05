@@ -86,6 +86,8 @@ def construct_resp_header(dns_header, resp_len):
 
 
 def pack_a_record(name_offset, ip):
+    if len(ip) == 0:
+        return ""
     pointer_mark = 0b11 << (2 + 4 * 3)
     pointer = struct.pack("!H", pointer_mark | name_offset)
     record_type = struct.pack("!H", 1)  #type A, host address
