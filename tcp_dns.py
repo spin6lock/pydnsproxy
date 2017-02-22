@@ -3,6 +3,7 @@ import struct
 import socket
 import logging
 import Queue
+import errno
 
 import cache
 from common import AUTHORIZED_DNS_SERVER, TIMEOUT, REMOTE_TCP_DNS_PORT, TCP_QUEUE_SIZE
@@ -21,14 +22,22 @@ class TCP_Handle(object):
         size_data = self.tcp_packet_head(data)
         packet = size_data + data
         while not resp:
-            sock.send(packet)
             try:
+                sock.send(packet)
                 resp = sock.recv(1024)
-                logger.debug("receive data:%s", resp.encode('hex'))
+                logger.debug("receive data:[%d]%s",
+                             len(resp), resp.encode('hex'))
             except socket.timeout:
                 logger.debug("tcp socket timeout, throw away")
                 self.drop_tcp_sock(sock)
                 sock = self.get_tcp_sock()
+            except IOError, e:
+                if e.errno == errno.EPIPE:
+                    logger.debug("tcp socket broken pipe, throw away")
+                    self.drop_tcp_sock(sock)
+                    sock = self.get_tcp_sock()
+                else:
+                    raise e
         self.release_tcp_sock(sock)
         return self.packet_body(resp)
 
@@ -72,5 +81,5 @@ class TCP_Handle(object):
         logger.debug("create sock")
         tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         tcp_sock.connect((AUTHORIZED_DNS_SERVER, REMOTE_TCP_DNS_PORT))
-        tcp_sock.settimeout(5)
+        tcp_sock.settimeout(TIMEOUT)
         return tcp_sock
