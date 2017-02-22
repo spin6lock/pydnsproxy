@@ -15,6 +15,7 @@ CACHE_TTL = 300  #单位为秒
 LOCAL_HOST = '127.0.0.1'
 AUTHORIZED_DNS_SERVER = '8.8.4.4'  #受信服务器
 DOMESTIC_DNS = '223.5.5.5'  #国内非受信服务器
+HTTP_DNS_QUERY_SERVER = "http://119.29.29.29/d?dn="  #HTTP DNS查询串
 
 #DNS解释策略配置
 #CONNECTION = 'tcp'  #若规则匹配，使用tcp进行查询

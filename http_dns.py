@@ -8,7 +8,7 @@ import socket
 
 import cache
 from cache import unpack_name
-from common import AUTHORIZED_DNS_SERVER, TIMEOUT, REMOTE_TCP_DNS_PORT
+from common import AUTHORIZED_DNS_SERVER, TIMEOUT, REMOTE_TCP_DNS_PORT, HTTP_DNS_QUERY_SERVER 
 
 logger = logging.getLogger('http_dns')
 
@@ -62,7 +62,7 @@ def unpack_dns_header(rawstr):
         }, start  # yapf: disable
 
 def httpdns_request(domain_name):
-    resp = urllib2.urlopen("http://119.29.29.29/d?dn=" + domain_name).read()
+    resp = urllib2.urlopen(HTTP_DNS_QUERY_SERVER + domain_name).read()
     resp = resp.split(";")
     return resp
 
