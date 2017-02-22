@@ -17,16 +17,18 @@ class TCP_Handle(object):
         if not hasattr(self, "tcp_pool"):
             self.tcp_pool = Queue.Queue(maxsize=TCP_QUEUE_SIZE)
         resp = None
+        sock = self.get_tcp_sock()
+        size_data = self.tcp_packet_head(data)
+        packet = size_data + data
         while not resp:
-            sock = self.get_tcp_sock()
-            size_data = self.tcp_packet_head(data)
-            sock.send(size_data + data)
+            sock.send(packet)
             try:
                 resp = sock.recv(1024)
                 logger.debug("receive data:%s", resp.encode('hex'))
             except socket.timeout:
                 logger.debug("tcp socket timeout, throw away")
-                sock = self.create_tcp_sock()
+                self.drop_tcp_sock(sock)
+                sock = self.get_tcp_sock()
         self.release_tcp_sock(sock)
         return self.packet_body(resp)
 
@@ -52,6 +54,10 @@ class TCP_Handle(object):
             sock = self.create_tcp_sock()
         return sock
 
+    def drop_tcp_sock(self, sock):
+        logger.debug("close timeout sock")
+        sock.close()
+
     def release_tcp_sock(self, sock):
         try:
             self.tcp_pool.put(sock, block=False)
@@ -59,7 +65,7 @@ class TCP_Handle(object):
             logger.debug("tcp pool is full, now throw away the oldest socket")
             old_sock = self.tcp_pool.get(block=False)
             old_sock.close()
-            logger.debug("close sock")
+            logger.debug("close old sock")
             self.tcp_pool.put(sock, block=False)
 
     def create_tcp_sock(self):
