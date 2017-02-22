@@ -53,6 +53,12 @@ def unpack_name(rawstring, offset):
 
 
 class memorized_domain(memorized):
+    def update_cache(self, obj, raw_data, cache, url, now):
+        value = self.func(obj, raw_data)
+        ttl = self.extract_ttl(value)
+        cache[url] = (value, now + ttl)
+        self.cache[self.cache_name] = cache
+
     def cache_call(self, obj, raw_data):
         cache = self.cache.get(self.cache_name, {})
         now = time.time()
@@ -63,12 +69,13 @@ class memorized_domain(memorized):
             logger.debug("hit cache")
             if now > last_update:
                 raise AttributeError
-        except (KeyError, AttributeError):
+        except KeyError:
             logger.debug("miss cache")
-            value = self.func(obj, raw_data)
-            ttl = self.extract_ttl(value)
-            cache[url] = (value, now + ttl)
-            self.cache[self.cache_name] = cache
+            self.update_cache(obj, raw_data, cache, url, now)
+        except AttributeError:
+            logger.debug("exceed ttl")
+            self.update_cache(obj, raw_data, cache, url, now)
+        value, _ = cache[url]
         return value
 
     def extract_url(self, data):
@@ -85,14 +92,16 @@ class memorized_domain(memorized):
         return url
 
     def extract_ttl(self, data):
-        logger.debug("raw dns response:%s", data.encode('hex'))
+        logger.debug("raw dns response:%s, len:%d", data.encode('hex'), len(data))
         start = 12
-        _, offset = unpack_name(data, start)
+        labels, offset = unpack_name(data, start)
+        logger.debug("labels:%s", labels)
         query_type_len = 2
         query_class_len = 2
         start = offset + query_type_len + query_class_len
         logger.debug("start:%d, %s", start, data[start:].encode("hex"))
-        _, offset = unpack_name(data, start)
+        labels, offset = unpack_name(data, start)
+        logger.debug("labels:%s", labels)
         logger.debug("offset:%d", offset)
         logger.debug("type class ttl:%s", data[offset:offset + 8].encode(
             "hex"))
