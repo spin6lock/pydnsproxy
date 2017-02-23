@@ -28,12 +28,12 @@ class TCP_Handle(object):
                 logger.debug("receive data:[%d]%s",
                              len(resp), resp.encode('hex'))
             except socket.timeout:
-                logger.debug("tcp socket timeout, throw away")
+                logger.error("tcp socket timeout, throw away")
                 self.drop_tcp_sock(sock)
                 sock = self.get_tcp_sock()
             except IOError, e:
                 if e.errno == errno.EPIPE:
-                    logger.debug("tcp socket broken pipe, throw away")
+                    logger.error("tcp socket broken pipe, throw away")
                     self.drop_tcp_sock(sock)
                     sock = self.get_tcp_sock()
                 else:
