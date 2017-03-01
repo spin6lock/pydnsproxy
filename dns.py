@@ -14,10 +14,11 @@ from tcp_dns import TCP_Handle
 from http_dns import HttpDnsHandle
 from gevent.server import DatagramServer
 
+log_format = '[%(asctime)s %(levelname)s %(name)s:%(lineno)d] %(message)s'
 if DEBUG:
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG, format=log_format)
 else:
-    logging.basicConfig(filename="pydnsproxy.log")
+    logging.basicConfig(filename="pydnsproxy.log", format=log_format)
 
 logger = logging.getLogger('dns')
 

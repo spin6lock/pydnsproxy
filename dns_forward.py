@@ -1,5 +1,5 @@
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s %(levelname)s %(name)s:%(lineno)d] %(message)s')
 logger = logging.getLogger("dns_forward")
 
 from socket import socket, AF_INET, SOCK_DGRAM, timeout
